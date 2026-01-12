@@ -1,0 +1,5 @@
+{
+  "name": "Procedural Rose Garden",
+  "description": "A 3D generative art application that simulates the growth of a white rose using Three.js. It features procedural geometry, organic growth animation, and atmospheric lighting inspired by nature photography.",
+  "requestFramePermissions": []
+}
