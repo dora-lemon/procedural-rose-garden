@@ -23,6 +23,7 @@ export default function App() {
   const [leafAngleMax, setLeafAngleMax] = useState(80);
   const [branchAngleMin, setBranchAngleMin] = useState(30);
   const [branchAngleMax, setBranchAngleMax] = useState(60);
+  const [curvature, setCurvature] = useState(0.5);  // Branch curvature
   const [petalGradientStart, setPetalGradientStart] = useState('#ff69b4');  // Hot pink
   const [petalGradientEnd, setPetalGradientEnd] = useState('#ffffff');      // White
   const [showInfo, setShowInfo] = useState(false);
@@ -46,6 +47,7 @@ export default function App() {
             leafAngleMax={leafAngleMax}
             branchAngleMin={branchAngleMin}
             branchAngleMax={branchAngleMax}
+            curvature={curvature}
             petalGradientStart={petalGradientStart}
             petalGradientEnd={petalGradientEnd}
         />
@@ -215,12 +217,31 @@ export default function App() {
                         <span>Max Branch Angle</span>
                         <span className="text-emerald-700 font-mono">{branchAngleMax}°</span>
                     </label>
-                    <input 
-                        type="range" 
-                        min="10" 
-                        max="120" 
-                        value={branchAngleMax} 
+                    <input
+                        type="range"
+                        min="10"
+                        max="120"
+                        value={branchAngleMax}
                         onChange={(e) => setBranchAngleMax(parseInt(e.target.value))}
+                        className="w-full h-1 bg-slate-300 rounded-lg appearance-none cursor-pointer [&::-webkit-slider-thumb]:appearance-none [&::-webkit-slider-thumb]:w-3 [&::-webkit-slider-thumb]:h-3 [&::-webkit-slider-thumb]:bg-emerald-600 [&::-webkit-slider-thumb]:rounded-full hover:[&::-webkit-slider-thumb]:scale-125 transition-all"
+                    />
+                </div>
+
+                <div className="h-px bg-slate-300/50 my-2"></div>
+
+                {/* Branch Curvature */}
+                <div className="space-y-2">
+                    <label className="flex justify-between text-xs text-slate-600 uppercase tracking-widest font-bold">
+                        <span>Branch Curvature</span>
+                        <span className="text-emerald-700 font-mono">{curvature.toFixed(2)}</span>
+                    </label>
+                    <input
+                        type="range"
+                        min="0"
+                        max="1"
+                        step="0.05"
+                        value={curvature}
+                        onChange={(e) => setCurvature(parseFloat(e.target.value))}
                         className="w-full h-1 bg-slate-300 rounded-lg appearance-none cursor-pointer [&::-webkit-slider-thumb]:appearance-none [&::-webkit-slider-thumb]:w-3 [&::-webkit-slider-thumb]:h-3 [&::-webkit-slider-thumb]:bg-emerald-600 [&::-webkit-slider-thumb]:rounded-full hover:[&::-webkit-slider-thumb]:scale-125 transition-all"
                     />
                 </div>

@@ -71,13 +71,44 @@ const Leaf = ({ position, rotation, scale, growth, index }: any) => {
     );
 }
 
-const Branch = ({ position, azimuth, inclination, length, growth, delay, index, leafSize, leafAngleMin, leafAngleMax }: any) => {
+const Branch = ({ position, azimuth, inclination, length, growth, delay, index, leafSize, leafAngleMin, leafAngleMax, curvature }: any) => {
     const inclinationGroupRef = useRef<THREE.Group>(null);
 
     // Branch growth logic: starts after 'delay' (relative to main growth)
     // Grows faster than main stem to catch up or just animates out
     const branchGrowth = Math.max(0, (growth - delay) * 4); // Speed multiplier
     const finalScale = Math.min(1, branchGrowth);
+
+    // Create curved path for the branch using gravity effect
+    const curve = useMemo(() => {
+        const points = [];
+        const segments = 16; // Enough segments for smooth curve
+
+        for (let i = 0; i <= segments; i++) {
+            const t = i / segments;
+            // Gravity effect: bend increases quadratically with distance
+            const bendAmount = curvature * t * t * 0.3;
+
+            points.push(new THREE.Vector3(
+                0,                      // X stays
+                t * length,             // Y extension along branch
+                bendAmount              // Z bends downward (towards ground)
+            ));
+        }
+
+        return new THREE.CatmullRomCurve3(points);
+    }, [length, curvature]);
+
+    // Create tube geometry from curve
+    const branchGeometry = useMemo(() => {
+        return new THREE.TubeGeometry(
+            curve,
+            8,      // tubularSegments
+            0.02,   // radius (similar to original cylinder)
+            6,      // radialSegments
+            false   // not closed
+        );
+    }, [curve]);
 
     useFrame((state) => {
         if (!inclinationGroupRef.current) return;
@@ -95,33 +126,43 @@ const Branch = ({ position, azimuth, inclination, length, growth, delay, index, 
         const items = [];
         const count = 3; // Leaves per branch
         for(let i=0; i<count; i++) {
-            const t = 0.3 + (i / count) * 0.6; // Position along branch
-            
+            const t = 0.3 + (i / count) * 0.6; // Position along branch (0-1)
+
+            // Get position and tangent on the curved branch
+            const point = curve.getPoint(t);
+            const tangent = curve.getTangent(t);
+
             // Randomize leaf orientation around the branch
             const leafAzimuth = (i * Math.PI * 0.8) + (index * 1.5);
 
             // Calculate opening angle range in radians
             const minRad = THREE.MathUtils.degToRad(leafAngleMin);
             const maxRad = THREE.MathUtils.degToRad(leafAngleMax);
-            
+
             // Handle case where min > max gracefully
             const startAngle = Math.min(minRad, maxRad);
             const rangeAngle = Math.abs(maxRad - minRad);
 
             // Randomize opening angle (tilt from branch)
             const openingAngle = startAngle + Math.random() * rangeAngle;
-            
+
+            // Calculate rotation based on tangent direction
+            // Create a quaternion from the tangent to orient leaves properly
+            const up = new THREE.Vector3(0, 1, 0);
+            const quaternion = new THREE.Quaternion().setFromUnitVectors(up, tangent);
+            const euler = new THREE.Euler().setFromQuaternion(quaternion);
+
             items.push({
-                position: [0, t * length, 0], // Along the Y of the branch cylinder
+                position: [point.x, point.y, point.z], // Position on the curved branch
                 // Rotation: [Tilt (Opening Angle), Azimuth around branch, Twist]
-                rotation: [openingAngle, leafAzimuth, 0],
+                rotation: [openingAngle, leafAzimuth, euler.z],
                 // Scale based on randomness AND leafSize
                 scale: (0.2 + Math.random() * 0.15) * leafSize,
                 index: i
             });
         }
         return items;
-    }, [length, index, leafSize, leafAngleMin, leafAngleMax]);
+    }, [curve, length, index, leafSize, leafAngleMin, leafAngleMax]);
 
     if (finalScale <= 0.01) return null;
 
@@ -136,20 +177,19 @@ const Branch = ({ position, azimuth, inclination, length, growth, delay, index, 
                 <group ref={inclinationGroupRef} rotation={[inclination, 0, 0]}>
                      {/* 4. Growth Scale & Geometry */}
                     <group scale={[finalScale, finalScale, finalScale]}>
-                         {/* The Branch Stick - Pivot at bottom (0,0,0) */}
-                        <mesh position={[0, length/2, 0]}>
-                            <cylinderGeometry args={[0.015, 0.025, length, 8]} />
+                         {/* The Branch Stick - Now using curved tube geometry */}
+                        <mesh geometry={branchGeometry}>
                             <meshBasicMaterial color="#8B5A2B" />
                         </mesh>
 
                         {/* Leaves on the branch */}
                         {leaves.map((leaf: any, i: number) => (
-                            <Leaf 
-                                key={i} 
+                            <Leaf
+                                key={i}
                                 index={i + index * 10} // Unique index for phase variance
-                                position={leaf.position} 
-                                rotation={leaf.rotation} 
-                                scale={leaf.scale} 
+                                position={leaf.position}
+                                rotation={leaf.rotation}
+                                scale={leaf.scale}
                                 growth={finalScale}
                             />
                         ))}
@@ -233,16 +273,17 @@ export const Stem: React.FC<StemProps> = ({ config, growth }) => {
         {branches.map((b: any, i: number) => (
             <Branch
                 key={i}
-                position={[0, b.relativeY * height * growth, 0]} 
+                position={[0, b.relativeY * height * growth, 0]}
                 azimuth={b.azimuth}
                 inclination={b.inclination}
                 length={b.length}
                 growth={growth}
-                delay={b.relativeY * 0.7} 
+                delay={b.relativeY * 0.7}
                 index={b.index}
                 leafSize={config.leafSize}
                 leafAngleMin={config.leafAngleMin}
                 leafAngleMax={config.leafAngleMax}
+                curvature={config.curvature}
             />
         ))}
 

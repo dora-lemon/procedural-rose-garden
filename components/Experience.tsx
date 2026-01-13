@@ -14,6 +14,7 @@ interface ExperienceProps {
   leafAngleMax: number;
   branchAngleMin: number;
   branchAngleMax: number;
+  curvature: number;
   petalGradientStart: string;
   petalGradientEnd: string;
 }
@@ -27,6 +28,7 @@ const PlantController = ({
     leafAngleMax,
     branchAngleMin,
     branchAngleMax,
+    curvature,
     petalGradientStart,
     petalGradientEnd
 }: {
@@ -38,6 +40,7 @@ const PlantController = ({
     leafAngleMax: number,
     branchAngleMin: number,
     branchAngleMax: number,
+    curvature: number,
     petalGradientStart: string,
     petalGradientEnd: string
 }) => {
@@ -53,7 +56,7 @@ const PlantController = ({
             id: `plant-${seed}`,
             seed: seed,
             height: stemLength,
-            curvature: 0,
+            curvature: curvature,
             petalCount: petalCount,
             color: '#fffff0',
             petalGradientStart: petalGradientStart,
@@ -65,7 +68,7 @@ const PlantController = ({
             branchAngleMax: branchAngleMax,
         });
 
-    }, [seed, petalCount, stemLength, leafSize, leafAngleMin, leafAngleMax, branchAngleMin, branchAngleMax, petalGradientStart, petalGradientEnd]);
+    }, [seed, petalCount, stemLength, leafSize, leafAngleMin, leafAngleMax, branchAngleMin, branchAngleMax, curvature, petalGradientStart, petalGradientEnd]);
 
     useFrame((state, delta) => {
         if (growth < 1) {
