@@ -57,15 +57,15 @@ const Leaf = ({ position, rotation, scale, growth, index }: any) => {
 
     return (
         <group ref={groupRef} position={position} rotation={baseEuler} scale={[s, s, s]}>
-             {/* Leaf geometry */}
-            <mesh rotation={[0.5, 0, 0]}>
+            {/* Leaf stem connecting to main branch - extends outward from branch surface */}
+            <mesh position={[0, 0.1, 0]} rotation={[0,0,0]} scale={[0.02, 0.2, 0.02]}>
+                 <cylinderGeometry args={[0.5, 1, 1, 8]} />
+                 <meshBasicMaterial color="#2d6a27" />
+            </mesh>
+            {/* Offset leaf geometry so it starts at top of leaf stem */}
+            <mesh position={[0, 0.2, 0]} rotation={[0.5, 0, 0]}>
                 <shapeGeometry args={[leafShape]} />
                 <meshBasicMaterial color="#2d5a27" side={THREE.DoubleSide} />
-            </mesh>
-            {/* Leaf stem connecting to main branch */}
-            <mesh position={[0, -0.1, 0]} rotation={[0,0,0]} scale={[0.02, 0.2, 0.02]}>
-                 <cylinderGeometry args={[1, 1, 1, 8]} />
-                 <meshBasicMaterial color="#2d6a27" />
             </mesh>
         </group>
     );
@@ -139,7 +139,7 @@ const Branch = ({ position, azimuth, inclination, length, growth, delay, index, 
                          {/* The Branch Stick - Pivot at bottom (0,0,0) */}
                         <mesh position={[0, length/2, 0]}>
                             <cylinderGeometry args={[0.015, 0.025, length, 8]} />
-                            <meshBasicMaterial color="#3a6b32" />
+                            <meshBasicMaterial color="#8B5A2B" />
                         </mesh>
 
                         {/* Leaves on the branch */}
@@ -217,8 +217,8 @@ export const Stem: React.FC<StemProps> = ({ config, growth }) => {
   return (
     <group ref={stemGroupRef}>
         {/* Main Stem Cylinder */}
-        <mesh 
-            position={[0, (height * growth) / 2, 0]} 
+        <mesh
+            position={[0, (height * growth) / 2, 0]}
             scale={[
                 0.6 + 0.4 * growth, // Thickness grows
                 growth,             // Height grows
@@ -226,7 +226,7 @@ export const Stem: React.FC<StemProps> = ({ config, growth }) => {
             ]}
         >
             <cylinderGeometry args={[0.04, 0.1, height, 16]} />
-            <meshBasicMaterial color="#3a6b32" />
+            <meshBasicMaterial color="#8B5A2B" />
         </mesh>
 
         {/* Branches attached to main stem */}
