@@ -16,11 +16,11 @@ const IconSettings = () => (
 
 export default function App() {
   const [seed, setSeed] = useState(Date.now());
-  const [petalCount, setPetalCount] = useState(25);
-  const [stemLength, setStemLength] = useState(4);
-  const [leafSize, setLeafSize] = useState(1.0);
-  const [leafAngleMin, setLeafAngleMin] = useState(30);
-  const [leafAngleMax, setLeafAngleMax] = useState(80);
+  const [petalCount, setPetalCount] = useState(10);
+  const [stemLength, setStemLength] = useState(2.5);
+  const [leafSize, setLeafSize] = useState(1.8);
+  const [leafAngleMin, setLeafAngleMin] = useState(8);
+  const [leafAngleMax, setLeafAngleMax] = useState(40);
   const [branchAngleMin, setBranchAngleMin] = useState(30);
   const [branchAngleMax, setBranchAngleMax] = useState(60);
   const [curvature, setCurvature] = useState(0.5);  // Branch curvature

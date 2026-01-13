@@ -228,9 +228,10 @@ export const Stem: React.FC<StemProps> = ({ config, growth }) => {
     const goldenAngle = Math.PI * (3 - Math.sqrt(5)); // ~2.3999 rad
 
     for(let i=0; i<count; i++) {
-        // Distribute branches along the height (from 15% to 85%)
-        const t = 0.15 + (i / count) * 0.75; 
-        
+        // Distribute branches along the height (from 15% to 60%)
+        // Avoid top area to prevent clipping with flower
+        const t = 0.15 + (i / count) * 0.45;
+
         // Use Golden Angle to distribute branches around the stem (0 to 2PI coverage)
         // Adding random noise to break perfect symmetry if needed, but golden angle is usually best for "all directions"
         const azimuth = (i * goldenAngle) + (config.seed % 10); 
