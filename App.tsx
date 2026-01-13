@@ -1,5 +1,6 @@
 import React, { useState, useCallback } from 'react';
 import { Experience } from './components/Experience';
+import { LeafConfig } from './types';
 
 // Simple SVG Icons
 const IconRefresh = () => (
@@ -19,6 +20,7 @@ export default function App() {
   const [petalCount, setPetalCount] = useState(10);
   const [stemLength, setStemLength] = useState(2.5);
   const [leafSize, setLeafSize] = useState(1.8);
+  const [leafScaleNearFlower, setLeafScaleNearFlower] = useState(0.3);
   const [leafAngleMin, setLeafAngleMin] = useState(8);
   const [leafAngleMax, setLeafAngleMax] = useState(40);
   const [branchAngleMin, setBranchAngleMin] = useState(30);
@@ -28,9 +30,47 @@ export default function App() {
   const [petalGradientEnd, setPetalGradientEnd] = useState('#ffffff');      // White
   const [showInfo, setShowInfo] = useState(false);
   const [showSettings, setShowSettings] = useState(true);
+  const [selectedLeafId, setSelectedLeafId] = useState<string | undefined>(undefined);
+  const [leafConfigs, setLeafConfigs] = useState<Record<string, LeafConfig>>({});
 
   const handleRegenerate = useCallback(() => {
     setSeed(Date.now());
+    // Clear leaf selection when regenerating
+    setSelectedLeafId(undefined);
+    setLeafConfigs({});
+  }, []);
+
+  const handleLeafClick = useCallback((leafId: string) => {
+    // Toggle selection: if clicking the same leaf, deselect it
+    if (selectedLeafId === leafId) {
+      setSelectedLeafId(undefined);
+    } else {
+      setSelectedLeafId(leafId);
+      // Initialize leaf config if not exists
+      if (!leafConfigs[leafId]) {
+        setLeafConfigs(prev => ({
+          ...prev,
+          [leafId]: {
+            id: leafId,
+            branchIndex: 0,
+            leafIndex: 0,
+            size: 1.0,
+            angle: 30,
+            color: '#2d5a27'
+          }
+        }));
+      }
+    }
+  }, [selectedLeafId, leafConfigs]);
+
+  const handleLeafParamChange = useCallback((leafId: string, param: keyof LeafConfig, value: any) => {
+    setLeafConfigs(prev => ({
+      ...prev,
+      [leafId]: {
+        ...prev[leafId],
+        [param]: value
+      }
+    }));
   }, []);
 
   return (
@@ -43,6 +83,7 @@ export default function App() {
             petalCount={petalCount}
             stemLength={stemLength}
             leafSize={leafSize}
+            leafScaleNearFlower={leafScaleNearFlower}
             leafAngleMin={leafAngleMin}
             leafAngleMax={leafAngleMax}
             branchAngleMin={branchAngleMin}
@@ -50,6 +91,9 @@ export default function App() {
             curvature={curvature}
             petalGradientStart={petalGradientStart}
             petalGradientEnd={petalGradientEnd}
+            selectedLeafId={selectedLeafId}
+            onLeafClick={handleLeafClick}
+            leafConfigs={leafConfigs}
         />
       </div>
 
@@ -123,13 +167,30 @@ export default function App() {
                         <span>Leaf Size</span>
                         <span className="text-emerald-700 font-mono">{leafSize.toFixed(1)}</span>
                     </label>
-                    <input 
-                        type="range" 
-                        min="0.1" 
-                        max="3" 
+                    <input
+                        type="range"
+                        min="0.1"
+                        max="3"
                         step="0.1"
-                        value={leafSize} 
+                        value={leafSize}
                         onChange={(e) => setLeafSize(parseFloat(e.target.value))}
+                        className="w-full h-1 bg-slate-300 rounded-lg appearance-none cursor-pointer [&::-webkit-slider-thumb]:appearance-none [&::-webkit-slider-thumb]:w-3 [&::-webkit-slider-thumb]:h-3 [&::-webkit-slider-thumb]:bg-emerald-600 [&::-webkit-slider-thumb]:rounded-full hover:[&::-webkit-slider-thumb]:scale-125 transition-all"
+                    />
+                </div>
+
+                {/* Leaf Scale Near Flower */}
+                <div className="space-y-2">
+                    <label className="flex justify-between text-xs text-slate-600 uppercase tracking-widest font-bold">
+                        <span>Leaf Scale (Near Flower)</span>
+                        <span className="text-emerald-700 font-mono">{leafScaleNearFlower.toFixed(2)}</span>
+                    </label>
+                    <input
+                        type="range"
+                        min="0.1"
+                        max="1"
+                        step="0.01"
+                        value={leafScaleNearFlower}
+                        onChange={(e) => setLeafScaleNearFlower(parseFloat(e.target.value))}
                         className="w-full h-1 bg-slate-300 rounded-lg appearance-none cursor-pointer [&::-webkit-slider-thumb]:appearance-none [&::-webkit-slider-thumb]:w-3 [&::-webkit-slider-thumb]:h-3 [&::-webkit-slider-thumb]:bg-emerald-600 [&::-webkit-slider-thumb]:rounded-full hover:[&::-webkit-slider-thumb]:scale-125 transition-all"
                     />
                 </div>
@@ -277,6 +338,77 @@ export default function App() {
                 <div className="flex justify-between text-xs text-slate-500 border-b border-slate-300/50 pb-1">
                     <span>Rendering</span>
                     <span className="text-emerald-700 font-medium">Flat Shading</span>
+                </div>
+            </div>
+        </div>
+      )}
+
+      {/* Leaf Editor Panel */}
+      {selectedLeafId && leafConfigs[selectedLeafId] && (
+        <div className="absolute top-24 left-6 w-72 p-6 bg-amber-50/80 backdrop-blur-xl border border-amber-200/60 rounded-2xl z-10 transition-all duration-500 animate-in slide-in-from-left-10 pointer-events-auto shadow-lg">
+            <div className="flex items-center justify-between mb-4">
+                <h3 className="text-slate-800 font-serif text-lg italic">Leaf Editor</h3>
+                <button
+                    onClick={() => setSelectedLeafId(undefined)}
+                    className="text-slate-500 hover:text-slate-700 transition-colors"
+                >
+                    <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                        <path d="M18 6 6 18"/><path d="m6 6 12 12"/>
+                    </svg>
+                </button>
+            </div>
+            <p className="text-xs text-slate-600 mb-4">
+                Editing: <span className="font-mono text-emerald-700">{selectedLeafId}</span>
+            </p>
+
+            <div className="space-y-4">
+                {/* Leaf Size */}
+                <div className="space-y-2">
+                    <label className="flex justify-between text-xs text-slate-600 uppercase tracking-widest font-bold">
+                        <span>Size</span>
+                        <span className="text-amber-700 font-mono">{leafConfigs[selectedLeafId]?.size.toFixed(2)}x</span>
+                    </label>
+                    <input
+                        type="range"
+                        min="0.1"
+                        max="3"
+                        step="0.1"
+                        value={leafConfigs[selectedLeafId]?.size || 1.0}
+                        onChange={(e) => handleLeafParamChange(selectedLeafId, 'size', parseFloat(e.target.value))}
+                        className="w-full h-1 bg-slate-300 rounded-lg appearance-none cursor-pointer [&::-webkit-slider-thumb]:appearance-none [&::-webkit-slider-thumb]:w-3 [&::-webkit-slider-thumb]:h-3 [&::-webkit-slider-thumb]:bg-amber-600 [&::-webkit-slider-thumb]:rounded-full hover:[&::-webkit-slider-thumb]:scale-125 transition-all"
+                    />
+                </div>
+
+                {/* Leaf Angle */}
+                <div className="space-y-2">
+                    <label className="flex justify-between text-xs text-slate-600 uppercase tracking-widest font-bold">
+                        <span>Angle</span>
+                        <span className="text-amber-700 font-mono">{leafConfigs[selectedLeafId]?.angle.toFixed(0)}°</span>
+                    </label>
+                    <input
+                        type="range"
+                        min="0"
+                        max="120"
+                        value={leafConfigs[selectedLeafId]?.angle || 30}
+                        onChange={(e) => handleLeafParamChange(selectedLeafId, 'angle', parseFloat(e.target.value))}
+                        className="w-full h-1 bg-slate-300 rounded-lg appearance-none cursor-pointer [&::-webkit-slider-thumb]:appearance-none [&::-webkit-slider-thumb]:w-3 [&::-webkit-slider-thumb]:h-3 [&::-webkit-slider-thumb]:bg-amber-600 [&::-webkit-slider-thumb]:rounded-full hover:[&::-webkit-slider-thumb]:scale-125 transition-all"
+                    />
+                </div>
+
+                {/* Leaf Color */}
+                <div className="space-y-2">
+                    <label className="text-xs text-slate-600 uppercase tracking-widest font-bold">
+                        Color
+                    </label>
+                    <div className="flex gap-2 items-center">
+                        <input
+                            type="color"
+                            value={leafConfigs[selectedLeafId]?.color || '#2d5a27'}
+                            onChange={(e) => handleLeafParamChange(selectedLeafId, 'color', e.target.value)}
+                            className="w-12 h-8 rounded cursor-pointer border-0"
+                        />
+                        <span className="text-xs text-slate-500 font-mono">{leafConfigs[selectedLeafId]?.color || '#2d5a27'}</span>
+                    </div>
                 </div>
             </div>
         </div>

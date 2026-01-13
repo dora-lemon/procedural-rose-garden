@@ -3,31 +3,59 @@ import * as THREE from 'three';
 import { useFrame } from '@react-three/fiber';
 import { Flower } from './Flower';
 
+// Seeded random number generator for consistent random values
+function seededRandom(seed: number): number {
+    const x = Math.sin(seed) * 10000;
+    return x - Math.floor(x);
+}
+
 interface StemProps {
   config: {
     height: number;
     curvature: number;
     color: string;
     petalCount: number;
+    petalGradientStart: string;
+    petalGradientEnd: string;
     seed: number;
     leafSize: number;
+    leafScaleNearFlower: number;
     leafAngleMin: number;
     leafAngleMax: number;
     branchAngleMin: number;
     branchAngleMax: number;
   };
   growth: number;
+  selectedLeafId?: string;
+  onLeafClick?: (leafId: string) => void;
+  leafConfigs?: Record<string, any>;
 }
 
-const Leaf = ({ position, rotation, scale, growth, index }: any) => {
+const Leaf = ({ position, rotation, scale, growth, index, leafId, isSelected, onClick, leafConfig }: any) => {
     const groupRef = useRef<THREE.Group>(null);
-    // Leaves unfold as the plant grows
-    const s = scale * Math.min(1, growth * 2);
+    const meshRef = useRef<THREE.Mesh>(null);
+
+    // Apply custom size if provided
+    const customScale = leafConfig?.size || 1.0;
+    const s = scale * customScale * Math.min(1, growth * 2);
+
+    // Apply custom angle if provided
+    const finalRotation = leafConfig?.angle !== undefined
+        ? [THREE.MathUtils.degToRad(leafConfig.angle), rotation[1], rotation[2]]
+        : rotation;
 
     // Base rotation derived from props
     const baseEuler = useMemo(() =>
-        new THREE.Euler(rotation[0], rotation[1], rotation[2], 'YXZ'),
-    [rotation]);
+        new THREE.Euler(finalRotation[0], finalRotation[1], finalRotation[2], 'YXZ'),
+    [finalRotation]);
+
+    // Handle click event
+    const handleClick = (e: THREE.Event) => {
+        e.stopPropagation();
+        if (onClick) {
+            onClick(leafId);
+        }
+    };
 
     // Leaf shape geometry
     const leafShape = useMemo(() => {
@@ -55,23 +83,29 @@ const Leaf = ({ position, rotation, scale, growth, index }: any) => {
 
     if (s < 0.01) return null;
 
+    // Apply custom color or selected color
+    const leafColor = isSelected ? "#ffcc00" : (leafConfig?.color || "#2d5a27");
+
     return (
         <group ref={groupRef} position={position} rotation={baseEuler} scale={[s, s, s]}>
             {/* Leaf stem connecting to main branch - extends outward from branch surface */}
-            <mesh position={[0, 0.1, 0]} rotation={[0,0,0]} scale={[0.02, 0.2, 0.02]}>
+            <mesh position={[0, 0.1, 0]} rotation={[0,0,0]} scale={[0.02, 0.2, 0.02]} onClick={handleClick}>
                  <cylinderGeometry args={[0.5, 1, 1, 8]} />
                  <meshBasicMaterial color="#2d6a27" />
             </mesh>
             {/* Offset leaf geometry so it starts at top of leaf stem */}
-            <mesh position={[0, 0.2, 0]} rotation={[0.5, 0, 0]}>
+            <mesh ref={meshRef} position={[0, 0.2, 0]} rotation={[0.5, 0, 0]} onClick={handleClick}>
                 <shapeGeometry args={[leafShape]} />
-                <meshBasicMaterial color="#2d5a27" side={THREE.DoubleSide} />
+                <meshBasicMaterial
+                    color={leafColor}
+                    side={THREE.DoubleSide}
+                />
             </mesh>
         </group>
     );
 }
 
-const Branch = ({ position, azimuth, inclination, length, growth, delay, index, leafSize, leafAngleMin, leafAngleMax, curvature }: any) => {
+const Branch = ({ position, azimuth, inclination, length, growth, delay, index, leafSize, leafScaleNearFlower, leafAngleMin, leafAngleMax, curvature, flowerConfig, selectedLeafId, onLeafClick, leafConfigs }: any) => {
     const inclinationGroupRef = useRef<THREE.Group>(null);
 
     // Branch growth logic: starts after 'delay' (relative to main growth)
@@ -126,7 +160,7 @@ const Branch = ({ position, azimuth, inclination, length, growth, delay, index, 
         const items = [];
         const count = 3; // Leaves per branch
         for(let i=0; i<count; i++) {
-            const t = 0.3 + (i / count) * 0.6; // Position along branch (0-1)
+            const t = 0.3 + (i / count) * 0.5; // Position along branch (0.3 to 0.8), avoid tip
 
             // Get position and tangent on the curved branch
             const point = curve.getPoint(t);
@@ -143,8 +177,9 @@ const Branch = ({ position, azimuth, inclination, length, growth, delay, index, 
             const startAngle = Math.min(minRad, maxRad);
             const rangeAngle = Math.abs(maxRad - minRad);
 
-            // Randomize opening angle (tilt from branch)
-            const openingAngle = startAngle + Math.random() * rangeAngle;
+            // Randomize opening angle (tilt from branch) using seeded random
+            const leafSeed = index * 1000 + i;
+            const openingAngle = startAngle + seededRandom(leafSeed) * rangeAngle;
 
             // Calculate rotation based on tangent direction
             // Create a quaternion from the tangent to orient leaves properly
@@ -152,17 +187,54 @@ const Branch = ({ position, azimuth, inclination, length, growth, delay, index, 
             const quaternion = new THREE.Quaternion().setFromUnitVectors(up, tangent);
             const euler = new THREE.Euler().setFromQuaternion(quaternion);
 
+            // Generate unique leaf ID
+            const leafId = `branch-${index}-leaf-${i}`;
+
             items.push({
+                leafId,
                 position: [point.x, point.y, point.z], // Position on the curved branch
                 // Rotation: [Tilt (Opening Angle), Azimuth around branch, Twist]
                 rotation: [openingAngle, leafAzimuth, euler.z],
-                // Scale based on randomness AND leafSize
-                scale: (0.2 + Math.random() * 0.15) * leafSize,
+                // Scale: leaves near flower (t > 0.6) use leafScaleNearFlower, others use default 0.35
+                scale: (t > 0.6 ? leafScaleNearFlower : 0.35) * leafSize,
                 index: i
             });
         }
         return items;
-    }, [curve, length, index, leafSize, leafAngleMin, leafAngleMax]);
+    }, [curve, length, index, leafSize, leafScaleNearFlower, leafAngleMin, leafAngleMax]);
+
+    // Flower data for branch tip
+    const flowerData = useMemo(() => {
+        if (!flowerConfig) return null;
+
+        // Create unique seed for this branch
+        const branchSeed = flowerConfig.seed + index * 1000;
+
+        // 60% of branches have flowers
+        const shouldHaveFlower = seededRandom(branchSeed) < 0.6;
+        if (!shouldHaveFlower) return null;
+
+        // Random size: 30%-70% of main flower
+        const flowerScale = 0.3 + seededRandom(branchSeed + 1) * 0.4;
+
+        // Random petal count: 50%-100% of main flower
+        const flowerPetalCount = Math.max(3, Math.floor(
+            flowerConfig.petalCount * (0.5 + seededRandom(branchSeed + 2) * 0.5)
+        ));
+
+        // Get the end point of the curved branch
+        const endPoint = curve.getPoint(1);
+
+        return {
+            hasFlower: true,
+            scale: flowerScale,
+            petalCount: flowerPetalCount,
+            color: flowerConfig.color,
+            gradientStart: flowerConfig.gradientStart,
+            gradientEnd: flowerConfig.gradientEnd,
+            position: [endPoint.x, endPoint.y, endPoint.z]
+        };
+    }, [flowerConfig, index, curve]);
 
     if (finalScale <= 0.01) return null;
 
@@ -187,12 +259,32 @@ const Branch = ({ position, azimuth, inclination, length, growth, delay, index, 
                             <Leaf
                                 key={i}
                                 index={i + index * 10} // Unique index for phase variance
+                                leafId={leaf.leafId}
+                                isSelected={selectedLeafId === leaf.leafId}
+                                onClick={onLeafClick}
+                                leafConfig={leafConfigs?.[leaf.leafId]}
                                 position={leaf.position}
                                 rotation={leaf.rotation}
                                 scale={leaf.scale}
                                 growth={finalScale}
                             />
                         ))}
+
+                        {/* Flower at branch tip */}
+                        {flowerData && (
+                            <group
+                                position={flowerData.position}
+                                scale={[flowerData.scale, flowerData.scale, flowerData.scale]}
+                            >
+                                <Flower
+                                    growth={finalScale}
+                                    color={flowerData.color}
+                                    petalCount={flowerData.petalCount}
+                                    gradientStart={flowerData.gradientStart}
+                                    gradientEnd={flowerData.gradientEnd}
+                                />
+                            </group>
+                        )}
                     </group>
                 </group>
             </group>
@@ -200,7 +292,7 @@ const Branch = ({ position, azimuth, inclination, length, growth, delay, index, 
     );
 };
 
-export const Stem: React.FC<StemProps> = ({ config, growth }) => {
+export const Stem: React.FC<StemProps> = ({ config, growth, selectedLeafId, onLeafClick, leafConfigs }) => {
   const height = config.height;
   const stemGroupRef = useRef<THREE.Group>(null);
 
@@ -282,9 +374,20 @@ export const Stem: React.FC<StemProps> = ({ config, growth }) => {
                 delay={b.relativeY * 0.7}
                 index={b.index}
                 leafSize={config.leafSize}
+                leafScaleNearFlower={config.leafScaleNearFlower}
                 leafAngleMin={config.leafAngleMin}
                 leafAngleMax={config.leafAngleMax}
                 curvature={config.curvature}
+                flowerConfig={{
+                    color: config.color,
+                    petalCount: config.petalCount,
+                    gradientStart: config.petalGradientStart,
+                    gradientEnd: config.petalGradientEnd,
+                    seed: config.seed
+                }}
+                selectedLeafId={selectedLeafId}
+                onLeafClick={onLeafClick}
+                leafConfigs={leafConfigs}
             />
         ))}
 

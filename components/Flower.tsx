@@ -51,7 +51,7 @@ const Petal: React.FC<PetalProps> = ({ index, total, growth, color, gradientStar
   const { scaleBase, maxAngle } = useMemo(() => {
     return {
         scaleBase: 0.25 + Math.random() * 0.05,
-        maxAngle: (Math.PI / 2) - (Math.random() * 0.15)
+        maxAngle: (Math.PI / 2.5) - (Math.random() * 0.15)  // ~72 degrees, more open
     };
   }, []);
 
@@ -128,20 +128,6 @@ export const Flower: React.FC<FlowerProps> = ({ growth, color, petalCount = 25, 
                 gradientStart={gradientStart}
                 gradientEnd={gradientEnd}
             />
-        ))}
-        
-        {/* Sepals (Green leaves under the flower) */}
-        {[0, 1, 2, 3, 4, 5, 6].map((i) => (
-             <group key={`sepal-${i}`} rotation={[0, (i / 7) * Math.PI * 2, 0]}>
-                <mesh 
-                    rotation={[Math.PI * 0.1 + (Math.PI * 0.4 * growth), 0, 0]} 
-                    position={[0, -0.02, 0.15]} 
-                    scale={[0.1 * growth, 0.4 * growth, 0.1 * growth]}
-                >
-                    <coneGeometry args={[1, 1, 4]} />
-                    <meshBasicMaterial color="#2d5a27" />
-                </mesh>
-             </group>
         ))}
     </group>
   );

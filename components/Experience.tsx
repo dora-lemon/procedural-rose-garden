@@ -10,6 +10,7 @@ interface ExperienceProps {
   petalCount: number;
   stemLength: number;
   leafSize: number;
+  leafScaleNearFlower: number;
   leafAngleMin: number;
   leafAngleMax: number;
   branchAngleMin: number;
@@ -17,6 +18,9 @@ interface ExperienceProps {
   curvature: number;
   petalGradientStart: string;
   petalGradientEnd: string;
+  selectedLeafId?: string;
+  onLeafClick?: (leafId: string) => void;
+  leafConfigs?: Record<string, any>;
 }
 
 const PlantController = ({
@@ -24,25 +28,33 @@ const PlantController = ({
     petalCount,
     stemLength,
     leafSize,
+    leafScaleNearFlower,
     leafAngleMin,
     leafAngleMax,
     branchAngleMin,
     branchAngleMax,
     curvature,
     petalGradientStart,
-    petalGradientEnd
+    petalGradientEnd,
+    selectedLeafId,
+    onLeafClick,
+    leafConfigs
 }: {
     seed: number,
     petalCount: number,
     stemLength: number,
     leafSize: number,
+    leafScaleNearFlower: number,
     leafAngleMin: number,
     leafAngleMax: number,
     branchAngleMin: number,
     branchAngleMax: number,
     curvature: number,
     petalGradientStart: string,
-    petalGradientEnd: string
+    petalGradientEnd: string,
+    selectedLeafId?: string,
+    onLeafClick?: (leafId: string) => void,
+    leafConfigs?: Record<string, any>
 }) => {
     const [growth, setGrowth] = useState(0);
     const [config, setConfig] = useState<PlantConfig | null>(null);
@@ -62,13 +74,14 @@ const PlantController = ({
             petalGradientStart: petalGradientStart,
             petalGradientEnd: petalGradientEnd,
             leafSize: leafSize,
+            leafScaleNearFlower: leafScaleNearFlower,
             leafAngleMin: leafAngleMin,
             leafAngleMax: leafAngleMax,
             branchAngleMin: branchAngleMin,
             branchAngleMax: branchAngleMax,
         });
 
-    }, [seed, petalCount, stemLength, leafSize, leafAngleMin, leafAngleMax, branchAngleMin, branchAngleMax, curvature, petalGradientStart, petalGradientEnd]);
+    }, [seed, petalCount, stemLength, leafSize, leafScaleNearFlower, leafAngleMin, leafAngleMax, branchAngleMin, branchAngleMax, curvature, petalGradientStart, petalGradientEnd]);
 
     useFrame((state, delta) => {
         if (growth < 1) {
@@ -80,17 +93,23 @@ const PlantController = ({
 
     return (
         <group>
-            <Stem config={config} growth={growth} />
-            
+            <Stem
+                config={config}
+                growth={growth}
+                selectedLeafId={selectedLeafId}
+                onLeafClick={onLeafClick}
+                leafConfigs={leafConfigs}
+            />
+
             <group position={[0, -0.01, 0]}>
                 <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, 0, 0]}>
                     <circleGeometry args={[1.5, 32]} />
                     <meshBasicMaterial color="#558b2f" />
                 </mesh>
-                
+
                 <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, -0.01, 0]}>
                     <circleGeometry args={[20, 64]} />
-                    <meshBasicMaterial color="#8d6e63" /> 
+                    <meshBasicMaterial color="#8d6e63" />
                 </mesh>
             </group>
         </group>
