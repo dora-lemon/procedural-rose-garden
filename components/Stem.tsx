@@ -2,6 +2,7 @@ import React, { useMemo, useRef } from 'react';
 import * as THREE from 'three';
 import { useFrame } from '@react-three/fiber';
 import { Flower } from './Flower';
+import { getRandomFlowerColors } from '../types';
 
 // Seeded random number generator for consistent random values
 function seededRandom(seed: number): number {
@@ -222,6 +223,9 @@ const Branch = ({ position, azimuth, inclination, length, growth, delay, index, 
             flowerConfig.petalCount * (0.5 + seededRandom(branchSeed + 2) * 0.5)
         ));
 
+        // Get unique random colors for this flower
+        const flowerColors = getRandomFlowerColors(branchSeed + 3);
+
         // Get the end point of the curved branch
         const endPoint = curve.getPoint(1);
 
@@ -230,8 +234,8 @@ const Branch = ({ position, azimuth, inclination, length, growth, delay, index, 
             scale: flowerScale,
             petalCount: flowerPetalCount,
             color: flowerConfig.color,
-            gradientStart: flowerConfig.gradientStart,
-            gradientEnd: flowerConfig.gradientEnd,
+            gradientStart: flowerColors.start,
+            gradientEnd: flowerColors.end,
             position: [endPoint.x, endPoint.y, endPoint.z]
         };
     }, [flowerConfig, index, curve]);
@@ -295,6 +299,11 @@ const Branch = ({ position, azimuth, inclination, length, growth, delay, index, 
 export const Stem: React.FC<StemProps> = ({ config, growth, selectedLeafId, onLeafClick, leafConfigs }) => {
   const height = config.height;
   const stemGroupRef = useRef<THREE.Group>(null);
+
+  // Generate random colors for the main flower
+  const mainFlowerColors = useMemo(() => {
+    return getRandomFlowerColors(config.seed + 9999);
+  }, [config.seed]);
 
   // Global wind sway for the main stem
   useFrame((state) => {
@@ -399,8 +408,8 @@ export const Stem: React.FC<StemProps> = ({ config, growth, selectedLeafId, onLe
                     growth={growth}
                     color={config.color}
                     petalCount={config.petalCount}
-                    gradientStart={config.petalGradientStart}
-                    gradientEnd={config.petalGradientEnd}
+                    gradientStart={mainFlowerColors.start}
+                    gradientEnd={mainFlowerColors.end}
                 />
              </group>
         </group>

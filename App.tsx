@@ -26,8 +26,6 @@ export default function App() {
   const [branchAngleMin, setBranchAngleMin] = useState(30);
   const [branchAngleMax, setBranchAngleMax] = useState(60);
   const [curvature, setCurvature] = useState(0.5);  // Branch curvature
-  const [petalGradientStart, setPetalGradientStart] = useState('#ff69b4');  // Hot pink
-  const [petalGradientEnd, setPetalGradientEnd] = useState('#ffffff');      // White
   const [showInfo, setShowInfo] = useState(false);
   const [showSettings, setShowSettings] = useState(true);
   const [selectedLeafId, setSelectedLeafId] = useState<string | undefined>(undefined);
@@ -89,8 +87,6 @@ export default function App() {
             branchAngleMin={branchAngleMin}
             branchAngleMax={branchAngleMax}
             curvature={curvature}
-            petalGradientStart={petalGradientStart}
-            petalGradientEnd={petalGradientEnd}
             selectedLeafId={selectedLeafId}
             onLeafClick={handleLeafClick}
             leafConfigs={leafConfigs}
@@ -197,27 +193,12 @@ export default function App() {
 
                 <div className="h-px bg-slate-300/50 my-2"></div>
 
-                {/* Petal Gradient Colors */}
-                <div className="space-y-2">
-                    <label className="text-xs text-slate-600 uppercase tracking-widest font-bold">
-                        Petal Gradient Colors
-                    </label>
-                    <div className="flex gap-2 items-center">
-                        <input
-                            type="color"
-                            value={petalGradientStart}
-                            onChange={(e) => setPetalGradientStart(e.target.value)}
-                            className="w-12 h-8 rounded cursor-pointer border-0"
-                        />
-                        <span className="text-xs text-slate-500">Base</span>
-                        <input
-                            type="color"
-                            value={petalGradientEnd}
-                            onChange={(e) => setPetalGradientEnd(e.target.value)}
-                            className="w-12 h-8 rounded cursor-pointer border-0"
-                        />
-                        <span className="text-xs text-slate-500">Tip</span>
-                    </div>
+                {/* Note about random colors */}
+                <div className="bg-gradient-to-r from-pink-50 to-purple-50 border border-pink-200 rounded-lg p-3">
+                    <p className="text-xs text-purple-700 leading-relaxed">
+                        <span className="font-bold">✨ Flowers have random colors!</span><br />
+                        Each flower (main + branches) gets a unique color palette from 15 curated combinations.
+                    </p>
                 </div>
 
                 <div className="h-px bg-slate-300/50 my-2"></div>

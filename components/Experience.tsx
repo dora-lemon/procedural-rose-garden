@@ -16,8 +16,6 @@ interface ExperienceProps {
   branchAngleMin: number;
   branchAngleMax: number;
   curvature: number;
-  petalGradientStart: string;
-  petalGradientEnd: string;
   selectedLeafId?: string;
   onLeafClick?: (leafId: string) => void;
   leafConfigs?: Record<string, any>;
@@ -34,8 +32,6 @@ const PlantController = ({
     branchAngleMin,
     branchAngleMax,
     curvature,
-    petalGradientStart,
-    petalGradientEnd,
     selectedLeafId,
     onLeafClick,
     leafConfigs
@@ -50,8 +46,6 @@ const PlantController = ({
     branchAngleMin: number,
     branchAngleMax: number,
     curvature: number,
-    petalGradientStart: string,
-    petalGradientEnd: string,
     selectedLeafId?: string,
     onLeafClick?: (leafId: string) => void,
     leafConfigs?: Record<string, any>
@@ -71,8 +65,8 @@ const PlantController = ({
             curvature: curvature,
             petalCount: petalCount,
             color: '#fffff0',
-            petalGradientStart: petalGradientStart,
-            petalGradientEnd: petalGradientEnd,
+            petalGradientStart: '#ff69b4', // Default, will be overridden by random colors
+            petalGradientEnd: '#ffffff',   // Default, will be overridden by random colors
             leafSize: leafSize,
             leafScaleNearFlower: leafScaleNearFlower,
             leafAngleMin: leafAngleMin,
@@ -81,7 +75,7 @@ const PlantController = ({
             branchAngleMax: branchAngleMax,
         });
 
-    }, [seed, petalCount, stemLength, leafSize, leafScaleNearFlower, leafAngleMin, leafAngleMax, branchAngleMin, branchAngleMax, curvature, petalGradientStart, petalGradientEnd]);
+    }, [seed, petalCount, stemLength, leafSize, leafScaleNearFlower, leafAngleMin, leafAngleMax, branchAngleMin, branchAngleMax, curvature]);
 
     useFrame((state, delta) => {
         if (growth < 1) {
